@@ -27,7 +27,7 @@ page = st.sidebar.selectbox(
 # OMDB POSTER FUNCTION
 # -------------------------------
 def fetch_poster(movie_name):
-    api_key = "YOUR_OMDB_API_KEY"  # 🔴 Replace this
+    api_key = "f76d24eb"  # 🔴 Replace this
 
     url = f"http://www.omdbapi.com/?t={movie_name}&apikey={api_key}"
     response = requests.get(url)
