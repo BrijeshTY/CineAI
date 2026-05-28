@@ -1,34 +1,33 @@
 import streamlit as st
 import requests
-import pandas as pd
 import time
 from recommender import recommend, df
 
+# -------------------------------
+# PAGE CONFIG
+# -------------------------------
 st.set_page_config(page_title="CineAI", layout="wide")
 
 # -------------------------------
-# 🎨 DARK THEME UI
+# SESSION STATE (WATCHLIST)
 # -------------------------------
-st.markdown("""
-<style>
-body {
-    background-color: #0e1117;
-    color: white;
-}
-</style>
-""", unsafe_allow_html=True)
+if "favorites" not in st.session_state:
+    st.session_state.favorites = []
 
 # -------------------------------
-# 📌 SIDEBAR MENU
+# SIDEBAR MENU
 # -------------------------------
 st.sidebar.title("🎬 CineAI Menu")
-page = st.sidebar.selectbox("Navigate", ["Home", "Recommend Movies", "Trending Movies"])
+page = st.sidebar.selectbox(
+    "Navigate",
+    ["Home", "Recommend Movies", "Trending Movies", "My Watchlist"]
+)
 
 # -------------------------------
-# 🎬 OMDB POSTER FUNCTION
+# OMDB POSTER FUNCTION
 # -------------------------------
 def fetch_poster(movie_name):
-    api_key = "f76d24eb"
+    api_key = "YOUR_OMDB_API_KEY"  # 🔴 Replace this
 
     url = f"http://www.omdbapi.com/?t={movie_name}&apikey={api_key}"
     response = requests.get(url)
@@ -40,28 +39,41 @@ def fetch_poster(movie_name):
     return "https://via.placeholder.com/300x450?text=No+Image"
 
 # -------------------------------
-# 🏠 HOME PAGE
+# HOME PAGE
 # -------------------------------
 if page == "Home":
     st.title("🍿 Welcome to CineAI")
-    st.subheader("AI-based Indian Movie Recommendation System")
-    st.write("Discover movies like Netflix using AI ✨")
+
+    st.markdown("""
+    ### 🎬 About CineAI
+
+    CineAI is an **AI-based movie recommendation system** that suggests Indian movies based on user preferences.
+
+    It uses **Machine Learning (TF-IDF + Cosine Similarity)** to find similar movies.
+
+    #### 🚀 Features:
+    - 🎥 AI Movie Recommendations  
+    - 🧠 Content-Based Filtering  
+    - 🖼️ Movie Posters (OMDb API)  
+    - 🔥 Trending Movies  
+    - ❤️ Watchlist Feature  
+    - 📱 Netflix-style UI  
+
+    #### 🎯 Objective:
+    Improve movie discovery using AI.
+    """)
+
+    st.subheader("👉 Use sidebar to explore")
 
 # -------------------------------
-# 🤖 RECOMMEND PAGE
+# RECOMMEND PAGE
 # -------------------------------
 elif page == "Recommend Movies":
 
     st.title("🎯 Get Movie Recommendations")
 
-    # Search bar
-    search = st.text_input("🔍 Search a movie")
-
     movie_list = df['title'].values
-    selected_movie = st.selectbox("🎥 Select Movie", movie_list)
-
-    # Genre filter
-    genre_filter = st.selectbox("🎭 Filter by Genre (optional)", ["All"] + list(df['genre'].dropna().unique()))
+    selected_movie = st.selectbox("🎥 Select a Movie", movie_list)
 
     if st.button("Recommend"):
 
@@ -81,16 +93,18 @@ elif page == "Recommend Movies":
                 st.image(poster, use_column_width=True)
                 st.write(movie)
 
+                if st.button(f"❤️ Add", key=movie):
+                    if movie not in st.session_state.favorites:
+                        st.session_state.favorites.append(movie)
+                        st.success("Added to Watchlist!")
+
 # -------------------------------
-# 🔥 TRENDING PAGE
+# TRENDING PAGE
 # -------------------------------
 elif page == "Trending Movies":
 
     st.title("🔥 Trending Indian Movies")
 
-    st.write("Top movies based on dataset")
-
-    # if rating column exists
     if "rating" in df.columns:
         top_movies = df.sort_values("rating", ascending=False).head(10)
     else:
@@ -104,3 +118,22 @@ elif page == "Trending Movies":
         with cols[i % 5]:
             st.image(poster, use_column_width=True)
             st.write(row['title'])
+
+# -------------------------------
+# WATCHLIST PAGE
+# -------------------------------
+elif page == "My Watchlist":
+
+    st.title("❤️ My Watchlist")
+
+    if len(st.session_state.favorites) == 0:
+        st.write("No movies added yet 😢")
+    else:
+        cols = st.columns(5)
+
+        for i, movie in enumerate(st.session_state.favorites):
+            poster = fetch_poster(movie)
+
+            with cols[i % 5]:
+                st.image(poster, use_column_width=True)
+                st.write(movie)
